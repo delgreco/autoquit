@@ -1,5 +1,9 @@
 # AutoQuit
 
+<p align="center">
+  <img src="screenshot.png" alt="AutoQuit settings window" width="560">
+</p>
+
 A macOS menu bar app (axe icon) that quits chosen apps whenever your Mac is not on a "Required Network".
 
 - Starts at login via a per-user LaunchAgent (`~/Library/LaunchAgents/com.autoquit.app.plist`) and is relaunched if killed.
