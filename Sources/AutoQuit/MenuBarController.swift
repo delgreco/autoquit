@@ -2,14 +2,12 @@ import AppKit
 import SwiftUI
 import AutoQuitCore
 
-/// Owns the axe status item, its menu, and the settings window.
-final class MenuBarController: NSObject, NSMenuDelegate {
+/// Owns the axe status item and the settings window.
+final class MenuBarController: NSObject, NSWindowDelegate {
     private let store: SettingsStore
     private let monitor: NetworkMonitor
     private let engine: EnforcementEngine
     private let statusItem = NSStatusBar.system.statusItem( withLength: NSStatusItem.squareLength )
-    private let statusLine = NSMenuItem( title: "", action: nil, keyEquivalent: "" )
-    private let loginToggle = NSMenuItem( title: "Launch at Login", action: #selector( toggleLogin ), keyEquivalent: "" )
     private var window: NSWindow?
     private var lastBlocking = false
 
@@ -19,20 +17,70 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         self.engine = engine
         super.init()
 
-        statusItem.button?.image = AxeIcon.image()
-        statusItem.button?.toolTip = "AutoQuit"
+        setupMainMenu()
 
-        let menu = NSMenu()
-        menu.delegate = self
-        statusLine.isEnabled = false
-        menu.addItem( statusLine )
-        menu.addItem( .separator() )
-        let settings = NSMenuItem( title: "Settings…", action: #selector( showSettings ), keyEquivalent: "," )
-        settings.target = self
-        menu.addItem( settings )
-        loginToggle.target = self
-        menu.addItem( loginToggle )
-        statusItem.menu = menu
+        if let button = statusItem.button {
+            button.image = AxeIcon.image()
+            button.toolTip = "AutoQuit"
+            button.target = self
+            button.action = #selector( showSettings )
+        }
+    }
+
+    /// Builds the standard macOS menu bar displayed at the upper left when active.
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        // Application Menu
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem( withTitle: "About AutoQuit", action: #selector( NSApplication.orderFrontStandardAboutPanel( _: ) ), keyEquivalent: "" )
+        appMenu.addItem( .separator() )
+        let settingsItem = NSMenuItem( title: "Settings…", action: #selector( showSettings ), keyEquivalent: "," )
+        settingsItem.target = self
+        appMenu.addItem( settingsItem )
+        appMenu.addItem( .separator() )
+        let servicesItem = NSMenuItem( title: "Services", action: nil, keyEquivalent: "" )
+        let servicesMenu = NSMenu()
+        servicesItem.submenu = servicesMenu
+        NSApp.servicesMenu = servicesMenu
+        appMenu.addItem( servicesItem )
+        appMenu.addItem( .separator() )
+        appMenu.addItem( withTitle: "Hide AutoQuit", action: #selector( NSApplication.hide( _: ) ), keyEquivalent: "h" )
+        let hideOthers = NSMenuItem( title: "Hide Others", action: #selector( NSApplication.hideOtherApplications( _: ) ), keyEquivalent: "h" )
+        hideOthers.keyEquivalentModifierMask = [ .command, .option ]
+        appMenu.addItem( hideOthers )
+        appMenu.addItem( withTitle: "Show All", action: #selector( NSApplication.unhideAllApplications( _: ) ), keyEquivalent: "" )
+        appMenu.addItem( .separator() )
+        appMenu.addItem( withTitle: "Quit AutoQuit", action: #selector( NSApplication.terminate( _: ) ), keyEquivalent: "q" )
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem( appMenuItem )
+
+        // Edit Menu
+        let editMenuItem = NSMenuItem()
+        let editMenu = NSMenu( title: "Edit" )
+        editMenu.addItem( withTitle: "Undo", action: Selector(( "undo:" )), keyEquivalent: "z" )
+        let redoItem = NSMenuItem( title: "Redo", action: Selector(( "redo:" )), keyEquivalent: "Z" )
+        editMenu.addItem( redoItem )
+        editMenu.addItem( .separator() )
+        editMenu.addItem( withTitle: "Cut", action: #selector( NSText.cut( _: ) ), keyEquivalent: "x" )
+        editMenu.addItem( withTitle: "Copy", action: #selector( NSText.copy( _: ) ), keyEquivalent: "c" )
+        editMenu.addItem( withTitle: "Paste", action: #selector( NSText.paste( _: ) ), keyEquivalent: "v" )
+        editMenu.addItem( withTitle: "Select All", action: #selector( NSText.selectAll( _: ) ), keyEquivalent: "a" )
+        editMenuItem.submenu = editMenu
+        mainMenu.addItem( editMenuItem )
+
+        // Window Menu
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu( title: "Window" )
+        windowMenu.addItem( withTitle: "Close", action: #selector( NSWindow.performClose( _: ) ), keyEquivalent: "w" )
+        windowMenu.addItem( withTitle: "Minimize", action: #selector( NSWindow.performMiniaturize( _: ) ), keyEquivalent: "m" )
+        windowMenu.addItem( withTitle: "Zoom", action: #selector( NSWindow.performZoom( _: ) ), keyEquivalent: "" )
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem( windowMenuItem )
+        NSApp.windowsMenu = windowMenu
+
+        NSApp.mainMenu = mainMenu
     }
 
     /// Updates the icon (adds a dot while blocking). Called on every monitor tick.
@@ -44,18 +92,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
     }
 
-    func menuNeedsUpdate( _ menu: NSMenu ) {
-        let ips = monitor.addresses.map { $0.description }.joined( separator: ", " )
-        switch engine.state {
-            case .notConfigured: statusLine.title = "Not configured – no apps are being restricted"
-            case .allowed: statusLine.title = "✅ On required network – \( ips )"
-            case .blocked: statusLine.title = "⛔ Off network – restricted apps blocked\( ips.isEmpty ? "" : " (\( ips ))" )"
-        }
-        loginToggle.state = LoginItem.isInstalled ? .on : .off
-    }
-
-    /// Opens (or focuses) the settings window.
-    @objc func showSettings() {
+    /// Opens (or focuses) the settings window and activates the app.
+    @objc func showSettings( _ sender: Any? = nil ) {
+        NSApp.setActivationPolicy( .regular )
         if window == nil {
             let view = SettingsView( store: store, monitor: monitor )
             let hosting = NSHostingController( rootView: view )
@@ -63,27 +102,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             window.title = "AutoQuit"
             window.styleMask = [ .titled, .closable, .miniaturizable, .resizable ]
             window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.setContentSize( NSSize( width: 620, height: 760 ) )
             window.center()
             self.window = window
         }
         NSApp.activate( ignoringOtherApps: true )
         window?.makeKeyAndOrderFront( nil )
+        window?.orderFrontRegardless()
     }
 
-    /// Toggles launch-at-login. Turning it off also stops AutoQuit (it would otherwise be relaunched).
-    @objc private func toggleLogin() {
-        if LoginItem.isInstalled {
-            let alert = NSAlert()
-            alert.messageText = "Turn off Launch at Login?"
-            alert.informativeText = "AutoQuit will quit now and restricted apps will no longer be enforced."
-            alert.addButton( withTitle: "Turn Off and Quit" )
-            alert.addButton( withTitle: "Cancel" )
-            guard alert.runModal() == .alertFirstButtonReturn else { return }
-            LoginItem.uninstall()
-            NSApp.terminate( nil )
-        }
-        else {
-            LoginItem.install()
-        }
+    func windowWillClose( _ notification: Notification ) {
+        NSApp.setActivationPolicy( .accessory )
     }
 }

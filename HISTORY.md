@@ -1,5 +1,15 @@
 # History
 
+## 2026-10-13 – Launch at Login in Settings and menu bar click action
+
+- Moved the Launch at Login configuration to `Sources/AutoQuit/SettingsView.swift` with a "Launch at Login" toggle and a "Quit AutoQuit" button.
+- Updated `Sources/AutoQuit/MenuBarController.swift` to launch and bring the Settings window to front directly when the menu bar icon is clicked (`orderFrontRegardless`), removing the dropdown menu and menu delegate.
+- Added standard macOS upper-left menu bar (`NSApp.mainMenu`) with AutoQuit, Edit, and Window menus in `Sources/AutoQuit/MenuBarController.swift`, switching activation policy to `.regular` while Settings is open and `.accessory` when closed.
+- Updated `Sources/AutoQuit/LoginItem.swift` to allow toggling Launch at Login without terminating the running application.
+- Added `applicationWillTerminate` in `Sources/AutoQuit/AppDelegate.swift` to unload the launchd job if the user opted out.
+- Updated `scripts/build_app.sh` to stop running instances when installing, and updated `README.md`.
+- Expanded Settings window dimensions to 620x760 (minimum 580x740) in `Sources/AutoQuit/SettingsView.swift` and `Sources/AutoQuit/MenuBarController.swift` to prevent content from being obscured.
+
 ## 2026-10-09 – Screenshot in README
 
 - Added `screenshot.png` (settings window) prominently at the top of `README.md`.

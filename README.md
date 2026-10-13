@@ -20,6 +20,6 @@ scripts/build_app.sh --install   # also copies to ~/Applications and launches it
 ```
 
 Run it from its final location (`~/Applications`): the LaunchAgent records the path of the executable that first ran.
-To stop AutoQuit, use the menu item **Launch at Login** to turn it off (this quits the app).
+Click the AutoQuit icon in the menu bar to open Settings, where you can configure the Required Network, restricted apps, and **Launch at Startup**, or quit the app.
 
 Settings live in `~/Library/Application Support/AutoQuit/settings.json`.

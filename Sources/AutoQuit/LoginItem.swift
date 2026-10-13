@@ -12,10 +12,9 @@ enum LoginItem {
     static var isInstalled: Bool { FileManager.default.fileExists( atPath: plistURL.path ) }
     static var userOptedOut: Bool { UserDefaults.standard.bool( forKey: optOutKey ) }
 
-    /// Writes the LaunchAgent plist and loads it. KeepAlive only on non-zero exit so a duplicate instance that
-    /// exits cleanly is not relaunched, but a crash or `kill -9` is.
+    /// Writes the LaunchAgent plist file.
     @discardableResult
-    static func install() -> Bool {
+    static func writePlist() -> Bool {
         guard let executable = Bundle.main.executablePath else { return false }
         let plist: [String: Any] = [
             "Label": label,
@@ -28,19 +27,31 @@ enum LoginItem {
         do {
             try FileManager.default.createDirectory( at: plistURL.deletingLastPathComponent(), withIntermediateDirectories: true )
             ( plist as NSDictionary ).write( to: plistURL, atomically: true )
+            UserDefaults.standard.set( false, forKey: optOutKey )
+            return true
         }
         catch {
             return false
         }
-        UserDefaults.standard.set( false, forKey: optOutKey )
+    }
+
+    /// Writes the LaunchAgent plist and loads it. KeepAlive only on non-zero exit so a duplicate instance that
+    /// exits cleanly is not relaunched, but a crash or `kill -9` is.
+    @discardableResult
+    static func install() -> Bool {
+        guard writePlist() else { return false }
         _ = launchctl( [ "bootout", domain + "/" + label ] )
         return launchctl( [ "bootstrap", domain, plistURL.path ] )
     }
 
-    /// Unloads and deletes the LaunchAgent, and remembers the user's choice.
+    /// Deletes the LaunchAgent plist and records opt-out so AutoQuit does not start at login.
     static func uninstall() {
         UserDefaults.standard.set( true, forKey: optOutKey )
         try? FileManager.default.removeItem( at: plistURL )
+    }
+
+    /// Unloads the job from launchd.
+    static func bootout() {
         _ = launchctl( [ "bootout", domain + "/" + label ] )
     }
 

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var draft: NetworkDraft
     @State private var selection = Set<String>()
     @State private var justSaved = false
+    @State private var launchAtStartup = LoginItem.isInstalled
     private let wasUnconfigured: Bool
     private let detectedIP: String?
 
@@ -35,10 +36,12 @@ struct SettingsView: View {
             Divider()
             appsSection
             Divider()
+            startupSection
+            Divider()
             statusFooter
         }
         .padding( 20 )
-        .frame( minWidth: 520, minHeight: 600 )
+        .frame( minWidth: 580, idealWidth: 620, minHeight: 740, idealHeight: 760 )
     }
 
     // MARK: Required Network
@@ -173,6 +176,30 @@ struct SettingsView: View {
     private func removeSelected() {
         store.update { $0.restrictedApps.removeAll( where: { selection.contains( $0.id ) } ) }
         selection.removeAll()
+    }
+
+    // MARK: Startup & Quit
+
+    private var startupSection: some View {
+        HStack {
+            Toggle( "Launch at Login", isOn: Binding(
+                get: { launchAtStartup },
+                set: { newValue in
+                    launchAtStartup = newValue
+                    if newValue {
+                        LoginItem.writePlist()
+                    }
+                    else {
+                        LoginItem.uninstall()
+                    }
+                }
+            ) )
+            Spacer()
+            Button( "Quit AutoQuit" ) {
+                NSApp.terminate( nil )
+            }
+            .keyboardShortcut( "q", modifiers: .command )
+        }
     }
 
     // MARK: Status

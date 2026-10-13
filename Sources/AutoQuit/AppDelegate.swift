@@ -55,6 +55,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed( _ sender: NSApplication ) -> Bool { false }
 
+    func applicationWillTerminate( _ notification: Notification ) {
+        if LoginItem.userOptedOut {
+            LoginItem.bootout()
+        }
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     /// Waits briefly for a previous instance (e.g. the one that just installed the LaunchAgent) to exit.

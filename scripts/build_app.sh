@@ -21,5 +21,7 @@ if [ "${1:-}" = "--install" ]; then
     rm -rf "$DEST/AutoQuit.app"
     cp -R "$APP" "$DEST/AutoQuit.app"
     echo "Installed $DEST/AutoQuit.app"
+    pkill -x AutoQuit || true
+    sleep 0.5
     open "$DEST/AutoQuit.app"
 fi
