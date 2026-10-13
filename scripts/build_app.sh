@@ -9,8 +9,12 @@ BIN="$( swift build -c release --show-bin-path )/AutoQuit"
 APP="build/AutoQuit.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/AutoQuit"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [ -f Resources/AppIcon.icns ]; then
+    cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+fi
 codesign --force --sign - --deep "$APP"
 codesign --verify --verbose "$APP"
 echo "Built $APP"

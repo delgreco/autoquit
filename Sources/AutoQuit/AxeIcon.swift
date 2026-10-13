@@ -9,25 +9,43 @@ enum AxeIcon {
             NSColor.black.setFill()
             NSColor.black.setStroke()
 
-            // Handle: a slightly curved diagonal stick.
+            // 1. Handle (haft): ergonomic curved shaft extending through the head.
             let handle = NSBezierPath()
-            handle.lineWidth = 2.2
+            handle.lineWidth = 2.0
             handle.lineCapStyle = .round
-            handle.move( to: NSPoint( x: 4.5, y: 2.5 ) )
-            handle.curve( to: NSPoint( x: 13.5, y: 14.5 ), controlPoint1: NSPoint( x: 7.0, y: 5.0 ), controlPoint2: NSPoint( x: 11.0, y: 10.5 ) )
+            handle.move( to: NSPoint( x: 3.5, y: 2.5 ) )
+            handle.curve( to: NSPoint( x: 13.5, y: 17.5 ),
+                          controlPoint1: NSPoint( x: 6.5, y: 6.5 ),
+                          controlPoint2: NSPoint( x: 10.5, y: 12.0 ) )
             handle.stroke()
 
-            // Blade: a chunky, rounded wedge at the top of the handle.
-            let blade = NSBezierPath()
-            blade.move( to: NSPoint( x: 10.5, y: 17.5 ) )
-            blade.curve( to: NSPoint( x: 17.5, y: 15.5 ), controlPoint1: NSPoint( x: 13.5, y: 19.0 ), controlPoint2: NSPoint( x: 16.5, y: 18.0 ) )
-            blade.curve( to: NSPoint( x: 15.0, y: 8.5 ), controlPoint1: NSPoint( x: 19.0, y: 13.0 ), controlPoint2: NSPoint( x: 17.5, y: 10.5 ) )
-            blade.curve( to: NSPoint( x: 10.5, y: 17.5 ), controlPoint1: NSPoint( x: 13.5, y: 12.0 ), controlPoint2: NSPoint( x: 11.5, y: 15.0 ) )
-            blade.close()
-            blade.fill()
+            // 2. Axe Head: flat poll (hammer butt) at back, eye around handle, and curved bearded blade.
+            let head = NSBezierPath()
+            // Top edge of poll
+            head.move( to: NSPoint( x: 9.5, y: 15.0 ) )
+            // Back face of poll
+            head.line( to: NSPoint( x: 7.5, y: 13.0 ) )
+            // Bottom of poll into collar under the eye
+            head.line( to: NSPoint( x: 10.5, y: 11.5 ) )
+            // Throat curving forward into the beard
+            head.curve( to: NSPoint( x: 13.5, y: 9.0 ),
+                        controlPoint1: NSPoint( x: 11.5, y: 10.0 ),
+                        controlPoint2: NSPoint( x: 12.2, y: 9.0 ) )
+            // Cutting edge arc: from beard (13.5, 9.0) up to toe (18.5, 14.5)
+            head.curve( to: NSPoint( x: 18.5, y: 14.5 ),
+                        controlPoint1: NSPoint( x: 17.0, y: 10.0 ),
+                        controlPoint2: NSPoint( x: 18.5, y: 12.5 ) )
+            // Top edge of blade from toe back to eye
+            head.curve( to: NSPoint( x: 12.5, y: 16.5 ),
+                        controlPoint1: NSPoint( x: 16.5, y: 16.0 ),
+                        controlPoint2: NSPoint( x: 14.5, y: 16.5 ) )
+            // Eye across to poll
+            head.line( to: NSPoint( x: 9.5, y: 15.0 ) )
+            head.close()
+            head.fill()
 
             if blocking {
-                NSBezierPath( ovalIn: NSRect( x: 1.0, y: 13.0, width: 5.0, height: 5.0 ) ).fill()
+                NSBezierPath( ovalIn: NSRect( x: 1.0, y: 13.0, width: 4.5, height: 4.5 ) ).fill()
             }
             return true
         }

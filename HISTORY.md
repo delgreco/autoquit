@@ -9,6 +9,8 @@
 - Added `applicationWillTerminate` in `Sources/AutoQuit/AppDelegate.swift` to unload the launchd job if the user opted out.
 - Updated `scripts/build_app.sh` to stop running instances when installing, and updated `README.md`.
 - Expanded Settings window dimensions to 620x760 (minimum 580x740) in `Sources/AutoQuit/SettingsView.swift` and `Sources/AutoQuit/MenuBarController.swift` to prevent content from being obscured.
+- Redrew menu bar axe icon in `Sources/AutoQuit/AxeIcon.swift` with authentic woodsman axe geometry (curved haft, flat hammer poll, eye, and bearded cutting edge).
+- Created full-size macOS application icon (`Resources/AppIcon.icns` and `Resources/AppIcon.png`) based on the axe design in a dark slate squircle tile, and configured `CFBundleIconFile` in `Resources/Info.plist` and `scripts/build_app.sh`.
 
 ## 2026-10-09 – Screenshot in README
 
