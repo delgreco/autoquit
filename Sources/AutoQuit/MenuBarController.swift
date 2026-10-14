@@ -9,7 +9,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     private let engine: EnforcementEngine
     private let statusItem = NSStatusBar.system.statusItem( withLength: NSStatusItem.squareLength )
     private var window: NSWindow?
-    private var lastBlocking = false
+    private var lastState: EnforcementState?
 
     init( store: SettingsStore, monitor: NetworkMonitor, engine: EnforcementEngine ) {
         self.store = store
@@ -83,12 +83,21 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         NSApp.mainMenu = mainMenu
     }
 
-    /// Updates the icon (adds a dot while blocking). Called on every monitor tick.
+    /// Updates the icon (colored dot for network state). Called on every monitor tick.
     func refreshIcon() {
-        let blocking = engine.state == .blocked
-        if blocking != lastBlocking {
-            lastBlocking = blocking
-            statusItem.button?.image = AxeIcon.image( blocking: blocking )
+        let state = engine.state
+        if state != lastState {
+            lastState = state
+            let color: NSColor?
+            switch state {
+            case .blocked:
+                color = .systemRed
+            case .allowed:
+                color = .systemGreen
+            case .notConfigured:
+                color = nil
+            }
+            statusItem.button?.image = AxeIcon.image( dotColor: color )
         }
     }
 

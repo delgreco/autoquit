@@ -1,5 +1,10 @@
 # History
 
+## 2026-10-14 – Colored status dot on menu bar icon
+
+- Updated `Sources/AutoQuit/AxeIcon.swift` to support colored status dots (`NSColor.systemRed` when off network / blocked, `NSColor.systemGreen` when on allowed network), dynamically adapting axe haft and blade colors to macOS Light/Dark appearances while retaining non-template color reproduction for the dot.
+- Updated `Sources/AutoQuit/MenuBarController.swift` to track `EnforcementState` and show a red dot when blocked, a green dot when allowed on the required network, and no dot when unconfigured.
+
 ## 2026-10-13 – Launch at Login in Settings and menu bar click action
 
 - Moved the Launch at Login configuration to `Sources/AutoQuit/SettingsView.swift` with a "Launch at Login" toggle and a "Quit AutoQuit" button.

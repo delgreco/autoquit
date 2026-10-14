@@ -1,13 +1,22 @@
 import AppKit
 
-/// Draws the cute axe menu bar icon as a template image (adapts to light/dark menu bars).
+/// Draws the cute axe menu bar icon (adapts to light/dark menu bars).
 enum AxeIcon {
-    /// - Parameter blocking: adds a small dot to show restricted apps are currently being blocked.
-    static func image( blocking: Bool = false ) -> NSImage {
+    /// - Parameter dotColor: optional color for the status dot (e.g. systemRed while blocked, systemGreen when allowed).
+    static func image( dotColor: NSColor? = nil ) -> NSImage {
         let size = NSSize( width: 20, height: 20 )
         let image = NSImage( size: size, flipped: false ) { _ in
-            NSColor.black.setFill()
-            NSColor.black.setStroke()
+            let axeColor: NSColor
+            if dotColor != nil {
+                let app = NSAppearance.currentDrawing()
+                let isDark = app.bestMatch( from: [ .darkAqua, .aqua ] ) == .darkAqua
+                axeColor = isDark ? .white : .black
+            }
+            else {
+                axeColor = .black
+            }
+            axeColor.setFill()
+            axeColor.setStroke()
 
             // 1. Handle (haft): ergonomic curved shaft extending through the head.
             let handle = NSBezierPath()
@@ -44,12 +53,18 @@ enum AxeIcon {
             head.close()
             head.fill()
 
-            if blocking {
+            if let dotColor = dotColor {
+                dotColor.setFill()
                 NSBezierPath( ovalIn: NSRect( x: 1.0, y: 13.0, width: 4.5, height: 4.5 ) ).fill()
             }
             return true
         }
-        image.isTemplate = true
+        image.isTemplate = ( dotColor == nil )
         return image
+    }
+
+    /// Convenience overload matching earlier API.
+    static func image( blocking: Bool ) -> NSImage {
+        image( dotColor: blocking ? .systemRed : nil )
     }
 }
