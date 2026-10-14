@@ -21,12 +21,12 @@ struct SettingsView: View {
         detectedIP = detected
         if let saved = store.settings.requiredNetwork {
             wasUnconfigured = false
-            _draft = State( initialValue: NetworkDraft( address: saved.address, preset: saved.preset, custom: String( saved.prefix ) ) )
+            _draft = State( initialValue: NetworkDraft( network: saved ) )
         }
         else {
             // Pre-populate with the current IP so setup is one click.
             wasUnconfigured = true
-            _draft = State( initialValue: NetworkDraft( address: detected ?? "", preset: .sameLocalNetwork ) )
+            _draft = State( initialValue: NetworkDraft( detectedIP: detected ?? "" ) )
         }
     }
 
@@ -50,7 +50,19 @@ struct SettingsView: View {
 
     private var isSaved: Bool {
         guard let saved = store.settings.requiredNetwork, case .success( let net ) = resolved else { return false }
-        return saved.address == net.base.description && saved.prefix == net.prefix && saved.preset == draft.preset
+        return saved.address == net.base.description && saved.prefix == net.prefix && saved.notation == draft.notation
+    }
+
+    private func useCurrentIP() {
+        guard let ip = detectedIP else { return }
+        if let addr = IPv4Address( ip ), let net = IPv4Network( address: addr, prefix: 24 ) {
+            draft.cidrText = "\( ip )/24"
+            draft.wildcardText = NetworkDraft.toWildcard( network: net ) ?? "\( ip )"
+        }
+        else {
+            draft.cidrText = "\( ip )/24"
+            draft.wildcardText = ip
+        }
     }
 
     private var networkSection: some View {
@@ -64,25 +76,45 @@ struct SettingsView: View {
                     Text( wasUnconfigured && store.settings.requiredNetwork == nil ? "You're currently on \( detectedIP )." : "This Mac's current IP: \( detectedIP )" )
                         .font( .callout )
                     Spacer()
-                    Button( "Use my current IP" ) { draft.address = detectedIP }
+                    Button( "Use my current IP" ) { useCurrentIP() }
                 }
             }
 
-            TextField( "IP address", text: $draft.address, prompt: Text( "192.168.1.23" ) )
-                .textFieldStyle( .roundedBorder )
-
-            Picker( "Allow", selection: $draft.preset ) {
-                ForEach( RangePreset.allCases, id: \.self ) { preset in
-                    Text( preset.title ).tag( preset )
+            Picker( "Notation", selection: Binding(
+                get: { draft.notation },
+                set: { newNotation in
+                    if newNotation != draft.notation {
+                        if case .success( let net ) = draft.resolve() {
+                            if newNotation == .wildcard, let wc = NetworkDraft.toWildcard( network: net ) {
+                                draft.wildcardText = wc
+                            }
+                            else if newNotation == .cidr {
+                                draft.cidrText = NetworkDraft.toCIDR( network: net )
+                            }
+                        }
+                        draft.notation = newNotation
+                    }
+                }
+            ) ) {
+                ForEach( NetworkNotation.allCases, id: \.self ) { notation in
+                    Text( notation.title ).tag( notation )
                 }
             }
             .pickerStyle( .radioGroup )
 
-            if draft.preset == .custom {
+            if draft.notation == .cidr {
                 HStack {
-                    TextField( "Size or subnet mask", text: $draft.custom, prompt: Text( "/24 or 255.255.255.0" ) )
+                    TextField( "CIDR notation", text: $draft.cidrText, prompt: Text( "192.168.1.0/24" ) )
                         .textFieldStyle( .roundedBorder )
-                    Text( "Examples: /24 = 255.255.255.0 (256 addresses), /16 = 255.255.0.0 (65,536)" )
+                    Text( "Example: 192.168.1.0/24 or 10.0.0.0/8" )
+                        .font( .caption ).foregroundStyle( .secondary )
+                }
+            }
+            else {
+                HStack {
+                    TextField( "Wildcard notation", text: $draft.wildcardText, prompt: Text( "192.168.1.*" ) )
+                        .textFieldStyle( .roundedBorder )
+                    Text( "Example: 192.168.1.*, 192.168.*.*, or 10.*.*.*" )
                         .font( .caption ).foregroundStyle( .secondary )
                 }
             }
@@ -110,7 +142,7 @@ struct SettingsView: View {
 
     private func saveNetwork() {
         guard case .success( let net ) = resolved else { return }
-        store.update { $0.requiredNetwork = RequiredNetwork( address: net.base.description, prefix: net.prefix, preset: draft.preset ) }
+        store.update { $0.requiredNetwork = RequiredNetwork( address: net.base.description, prefix: net.prefix, notation: draft.notation ) }
         justSaved = true
     }
 

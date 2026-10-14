@@ -50,23 +50,42 @@ final class IPv4Tests: XCTestCase {
 }
 
 final class DraftTests: XCTestCase {
-    func testPresets() {
-        let ip = "192.168.1.23"
-        XCTAssertEqual( try NetworkDraft( address: ip, preset: .exactAddress ).resolve().get().prefix, 32 )
-        XCTAssertEqual( try NetworkDraft( address: ip, preset: .sameLocalNetwork ).resolve().get().prefix, 24 )
-        XCTAssertEqual( try NetworkDraft( address: ip, preset: .largerNetwork ).resolve().get().prefix, 16 )
+    func testCIDRNotation() {
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "192.168.1.0/24" ).resolve().get().prefix, 24 )
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "192.168.1.50/32" ).resolve().get().prefix, 32 )
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "192.168.1.50" ).resolve().get().prefix, 32 )
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "10.0.0.0/8" ).resolve().get().prefix, 8 )
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "10.1.2.3/20" ).resolve().get().prefix, 20 )
+        XCTAssertEqual( try NetworkDraft( notation: .cidr, cidrText: "10.1.2.3/255.255.240.0" ).resolve().get().prefix, 20 )
     }
 
-    func testCustomForms() {
-        XCTAssertEqual( try NetworkDraft( address: "10.1.2.3", preset: .custom, custom: "/20" ).resolve().get().prefix, 20 )
-        XCTAssertEqual( try NetworkDraft( address: "10.1.2.3", preset: .custom, custom: "20" ).resolve().get().prefix, 20 )
-        XCTAssertEqual( try NetworkDraft( address: "10.1.2.3", preset: .custom, custom: "255.255.240.0" ).resolve().get().prefix, 20 )
+    func testWildcardNotation() {
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.1.*" ).resolve().get().prefix, 24 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.*.*" ).resolve().get().prefix, 16 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.*" ).resolve().get().prefix, 16 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "10.*.*.*" ).resolve().get().prefix, 8 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "10.*" ).resolve().get().prefix, 8 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "*.*.*.*" ).resolve().get().prefix, 0 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "*" ).resolve().get().prefix, 0 )
+        XCTAssertEqual( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.1.50" ).resolve().get().prefix, 32 )
+    }
+
+    func testConversions() {
+        let net = IPv4Network( cidr: "192.168.1.0/24" )!
+        XCTAssertEqual( NetworkDraft.toWildcard( network: net ), "192.168.1.*" )
+        XCTAssertEqual( NetworkDraft.toCIDR( network: net ), "192.168.1.0/24" )
+
+        let net16 = IPv4Network( cidr: "172.16.0.0/16" )!
+        XCTAssertEqual( NetworkDraft.toWildcard( network: net16 ), "172.16.*.*" )
+        XCTAssertEqual( NetworkDraft.toCIDR( network: net16 ), "172.16.0.0/16" )
     }
 
     func testErrors() {
-        XCTAssertThrowsError( try NetworkDraft( address: "bogus" ).resolve().get() )
-        XCTAssertThrowsError( try NetworkDraft( address: "10.1.2.3", preset: .custom, custom: "255.0.255.0" ).resolve().get() )
-        XCTAssertThrowsError( try NetworkDraft( address: "10.1.2.3", preset: .custom, custom: "40" ).resolve().get() )
+        XCTAssertThrowsError( try NetworkDraft( notation: .cidr, cidrText: "bogus" ).resolve().get() )
+        XCTAssertThrowsError( try NetworkDraft( notation: .cidr, cidrText: "10.1.2.3/40" ).resolve().get() )
+        XCTAssertThrowsError( try NetworkDraft( notation: .wildcard, wildcardText: "192.*.1.*" ).resolve().get() )
+        XCTAssertThrowsError( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.1.1*" ).resolve().get() )
+        XCTAssertThrowsError( try NetworkDraft( notation: .wildcard, wildcardText: "192.168.1.0/24" ).resolve().get() )
     }
 
     func testSummary() {

@@ -1,5 +1,11 @@
 # History
 
+## 2026-10-14 – CIDR and Wildcard network configuration choices
+
+- Replaced preset radio choices in `Sources/AutoQuit/SettingsView.swift` with two distinct notation options: "CIDR notation" (e.g. `192.168.1.0/24`) and "Wildcard notation (asterisks)" (e.g. `192.168.1.*`, `192.168.*.*`, `10.*.*.*`).
+- Added `NetworkNotation` enum in `Sources/AutoQuitCore/RequiredNetwork.swift` and updated `RequiredNetwork` and `NetworkDraft` to parse, validate, and convert between CIDR and wildcard asterisk notation while maintaining backwards compatibility with existing stored settings.
+- Updated `Tests/AutoQuitTests/AutoQuitTests.swift` with unit tests for CIDR notation, Wildcard notation, conversions, and error reporting.
+
 ## 2026-10-14 – Colored status dot on menu bar icon
 
 - Updated `Sources/AutoQuit/AxeIcon.swift` to support colored status dots (`NSColor.systemRed` when off network / blocked, `NSColor.systemGreen` when on allowed network), dynamically adapting axe haft and blade colors to macOS Light/Dark appearances while retaining non-template color reproduction for the dot.
