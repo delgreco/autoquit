@@ -17,6 +17,7 @@ A macOS menu bar app (axe icon) that quits chosen apps whenever your Mac is not 
 swift test
 scripts/build_app.sh             # builds build/AutoQuit.app (ad-hoc signed)
 scripts/build_app.sh --install   # also copies to ~/Applications and launches it
+scripts/update_screenshot.sh     # updates screenshot.png from the current Settings UI
 ```
 
 Run it from its final location (`~/Applications`): the LaunchAgent records the path of the executable that first ran.

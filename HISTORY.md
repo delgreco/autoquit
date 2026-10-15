@@ -1,5 +1,11 @@
 # History
 
+## 2026-10-14 – On-demand screenshot generator script
+
+- Added `scripts/update_screenshot.sh` to capture a native, high-resolution screenshot of the AutoQuit Settings window into `screenshot.png` using the active settings.
+- Updated `screenshot.png` with the new Settings interface (CIDR and Wildcard notation options, Launch at Login, and Quit AutoQuit).
+- Documented `scripts/update_screenshot.sh` in `README.md`.
+
 ## 2026-10-14 – CIDR and Wildcard network configuration choices
 
 - Replaced preset radio choices in `Sources/AutoQuit/SettingsView.swift` with two distinct notation options: "CIDR notation" (e.g. `192.168.1.0/24`) and "Wildcard notation (asterisks)" (e.g. `192.168.1.*`, `192.168.*.*`, `10.*.*.*`).
